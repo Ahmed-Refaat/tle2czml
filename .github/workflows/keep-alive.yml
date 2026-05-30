@@ -2,7 +2,7 @@ name: 🔄 Keep Alive
 
 on:
   schedule:
-    - cron: "0 12 * * *"  # Every day at noon UTC
+    - cron: "0 12 * * *"
   workflow_dispatch:
 
 jobs:
@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Keep repo active
         run: |
@@ -20,7 +22,10 @@ jobs:
           mkdir -p .github
           echo "$DATE" > .github/last_active.txt
           git add .github/last_active.txt
-          git commit -m "🔄 Keep alive - $DATE" || echo "Nothing to commit"
-          git push || echo "Push failed, skipping"
+          git commit -m "🔄 Keep alive - $DATE" || echo "No changes"
+          if ! git push; then
+            echo "::error::Push failed - check branch protection"
+            exit 1
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
